@@ -6,7 +6,7 @@ import numpy as np
 # PAGE CONFIGURATION & CUSTOM CSS
 # ==========================================
 st.set_page_config(
-    page_title="Mine Environment & Infrastructure Dashboard", 
+ st.title("⚙️ Integrated Environmental & Infrastructure Telemetry")
     page_icon="⛏️", 
     layout="wide",
     initial_sidebar_state="expanded"
