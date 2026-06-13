@@ -6,8 +6,8 @@ import numpy as np
 # PAGE CONFIGURATION & CUSTOM CSS
 # ==========================================
 st.set_page_config(
- st.title("⚙️ Integrated Environmental & Infrastructure Telemetry")
-    page_icon="⛏️", 
+    page_title="Mine Environment & Infrastructure Dashboard", 
+    page_icon="⚙️", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -24,7 +24,7 @@ st.markdown("""
 # ==========================================
 # HEADER SECTION
 # ==========================================
-st.title("⚙️ Mineral Technology Capstone Dashboard")
+st.title("⚙️ Integrated Environmental & Infrastructure Telemetry")
 st.subheader("Open-Pit Mine: Environmental & Solar Infrastructure Monitoring")
 st.markdown("Real-time telemetry for airborne particulate matter and photovoltaic efficiency.")
 st.divider()
@@ -44,7 +44,6 @@ with st.sidebar:
     
     st.subheader("3. Hardware Status")
     solar_voltage = st.slider("Solar Panel Output (V)", min_value=0.0, max_value=12.0, value=11.8, step=0.1)
-    # NEW PARAMETER: DUST ON PANEL
     panel_dust_accumulation = st.slider("Surface Dust on Panel (%)", min_value=0, max_value=100, value=15, step=5)
 
 # ==========================================
@@ -54,8 +53,8 @@ DUST_WARNING_LEVEL = 150.0
 DUST_DANGER_LEVEL = 300.0
 BRIGHT_SUNLIGHT_THRESHOLD = 70.0
 EXPECTED_MAX_VOLTAGE = 12.0
-EFFICIENCY_DROP_ALERT = 0.60  # 60%
-CLEANING_REQUIRED_THRESHOLD = 60 # 60% dust accumulation triggers cleaning
+EFFICIENCY_DROP_ALERT = 0.60  # 60% expected output
+CLEANING_REQUIRED_THRESHOLD = 60 # 60% surface dust triggers cleaning
 
 # ==========================================
 # ROW 1: LIVE TELEMETRY METRICS
@@ -74,7 +73,6 @@ with col3:
     st.metric(label="Panel Output Voltage", value=f"{solar_voltage} V", delta=f"{efficiency:.1f}% Efficiency")
 
 with col4:
-    # NEW METRIC: DUST ACCUMULATION
     st.metric(label="Panel Surface Dust", value=f"{panel_dust_accumulation} %", delta="Cleaning Needed" if panel_dust_accumulation >= CLEANING_REQUIRED_THRESHOLD else "Clean", delta_color="inverse")
 
 st.divider()
@@ -99,11 +97,11 @@ with status_col1:
 with status_col2:
     st.markdown("**⚡ Photovoltaic (PV) Maintenance**")
     
-    # Check if cleaning is explicitly needed based on the new dust accumulation slider
+    # Check if cleaning is explicitly needed based on the dust accumulation
     if panel_dust_accumulation >= CLEANING_REQUIRED_THRESHOLD:
          st.error("🧹 **ACTION REQUIRED: IMMEDIATE CLEANING**\n\nSurface dust accumulation has reached critical levels. Solar cells are blocked. **Dispatch maintenance crew to wash panels immediately.**")
     
-    # Original logic: Check if voltage drops mysteriously during bright sunlight
+    # Check if voltage drops mysteriously during bright sunlight
     elif ambient_light >= BRIGHT_SUNLIGHT_THRESHOLD:
         current_efficiency = solar_voltage / EXPECTED_MAX_VOLTAGE
         
