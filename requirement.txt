@@ -1,7 +1,0 @@
-streamlit
-plotly
-pandas
-numpy
-requests
-fpdf2
-googlemaps
