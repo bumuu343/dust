@@ -3,5 +3,5 @@ plotly
 pandas
 numpy
 requests
-fpdf
+fpdf2
 googlemaps
