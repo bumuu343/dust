@@ -324,39 +324,53 @@ with tab_exec:
             <span style="background:#f0fff0; padding:0.2rem 1rem; border-radius:2rem;">🛡️ Enclosure</span>
         </div>
         """, unsafe_allow_html=True)
-    with col_b:
+        with col_b:
         st.markdown("### ⚡ ASSET HEALTH")
-        m1, m2 = st.columns(2)
-        m1.metric("Output Voltage", f"{actual_v:.2f} V", f"{efficiency:.1f}% efficiency")
-        m2.metric("Power Generation", f"{actual_w:.2f} W", f"-{loss_w:.1f} W loss", delta_color="inverse")
+        
+        # Susunan baris pertama: Input & Output Voltage
+        v1, v2 = st.columns(2)
+        v1.metric("Input Voltage", f"{potential_v:.2f} V", "Raw from Solar")
+        v2.metric("Output Voltage", f"{actual_v:.2f} V", f"{efficiency:.1f}% efficiency", delta_color="normal")
+        
+        # Susunan baris kedua: Potential & Actual Power
+        w1, w2 = st.columns(2)
+        w1.metric("Potential Power", f"{potential_w:.2f} W", "Max Capacity")
+        w2.metric("Actual Power", f"{actual_w:.2f} W", f"-{loss_w:.1f} W loss", delta_color="inverse")
 
         st.markdown("### 👥 PERSONAL HEALTH & SAFETY")
         if personnel_status == "EVACUATION":
             bg_color, border_color, icon, status_text = "#ffebee", "#d32f2f", "☠️", "EVACUATION REQUIRED"
         elif personnel_status == "HAZARDOUS":
-            bg_color, border_color, icon, status_text = "#fff3e0", "#ff9800", "😷", "HAZARDOUS – RESPIRATOR MANDATORY"
+            bg_color, border_color, icon, status_text = "#fff3e0", "#ff9800", "😷", "HAZARDOUS (USE PPE)"
         else:
-            bg_color, border_color, icon, status_text = "#e8f5e9", "#4caf50", "😊", "NOMINAL – SAFE FOR WORK"
+            bg_color, border_color, icon, status_text = "#e8f5e9", "#4caf50", "😊", "NOMINAL – SAFE"
 
         pm10_percent = min(100, (sim_pm10 / 500) * 100)
+        
+        # Status Card
         st.markdown(f"""
         <div style="background-color:{bg_color}; padding:1rem; border-radius:1rem; border-left:8px solid {border_color}; margin:0.5rem 0;">
             <div style="display:flex; align-items:center; gap:1rem;">
-                <div style="font-size:3rem;">{icon}</div>
+                <div style="font-size:2.8rem;">{icon}</div>
                 <div>
-                    <div style="font-size:1.8rem; font-weight:bold;">{status_text}</div>
-                    <div style="font-size:1rem;">PM10 Concentration: <b>{sim_pm10:.1f} µg/m³</b></div>
+                    <div style="font-size:1.5rem; font-weight:bold; color:#1e2a3e;">{status_text}</div>
+                    <div style="font-size:1rem; color:#4a5b6e;">PM10 Concentration: <b>{sim_pm10:.1f} µg/m³</b></div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("**Exposure Level:**")
+        # --- EXPOSURE LEVEL BAR ---
+        st.markdown(f"**Exposure Level: {int(pm10_percent)}%**")
         st.progress(int(pm10_percent))
-        if sim_pm10 >= 150:
-            st.warning("⚠️ **Safety Alert:** Prolonged exposure may cause respiratory issues. Use appropriate PPE.")
+        
+        # Dynamic Safety Alerts based on Exposure
         if sim_pm10 >= 350:
             st.error("🚨 **CRITICAL:** Cease all outdoor activities immediately. Evacuate to shelter.")
+        elif sim_pm10 >= 150:
+            st.warning("⚠️ **Safety Alert:** Prolonged exposure may cause respiratory issues. Respirators mandated.")
+        else:
+            st.success("✅ **Safety Alert:** Air quality is within safe breathable limits.")
 
         st.markdown("### 💨 Dust Sensor Analytics")
         if len(st.session_state.sys_logs) > 0:
