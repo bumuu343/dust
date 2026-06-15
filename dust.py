@@ -472,4 +472,8 @@ with tab_audit:
     st.download_button(
         label="📥 Download Safety Report (PDF)",
         data=pdf_bytes,
-        file_name=f"Solavaria_Safety_Report_{datetime.now(malaysia_tz).strftime('%Y%m%d_%H%M')}
+        file_name=f"Solavaria_Safety_Report_{datetime.now(malaysia_tz).strftime('%Y%m%d_%H%M')}.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
+
