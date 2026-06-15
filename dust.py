@@ -324,7 +324,7 @@ with tab_exec:
             <span style="background:#f0fff0; padding:0.2rem 1rem; border-radius:2rem;">🛡️ Enclosure</span>
         </div>
         """, unsafe_allow_html=True)
-        with col_b:
+    with col_b:
         st.markdown("### ⚡ ASSET HEALTH")
         
         # Susunan baris pertama: Input & Output Voltage
