@@ -443,7 +443,9 @@ with tab_geo:
                 with w2:
                     st.metric(label="Wind Speed", value=f"{weather_data['windspeed']} km/h")
                 
-                st.caption("✨ Live forecast data matched successfully.")
+                # --- PETA KECIL ANIMASI CUACA (WINDY) DIMASUKKAN SEMULA DI SINI ---
+                windy_html = f"""<iframe width="100%" height="200" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=10&overlay=wind&product=ecmwf&level=surface&lat={lat}&lon={lon}" frameborder="0" style="border-radius: 1rem; border: 1px solid #e9ecef; margin-top: 0.5rem;"></iframe>"""
+                components.html(windy_html, height=210)
                 
                 st.markdown("##### ☀️ SOLAR POSITION")
                 az, el = compute_solar_position(lat, lon)
@@ -454,7 +456,6 @@ with tab_geo:
                 st.warning("⚠️ Data cuaca tidak dapat dimuat turun buat masa ini.")
     else:
         st.error("⚠️ Lokasi tidak dijumpai. Sila masukkan nama tempat yang lebih spesifik.")
-
 # ------------------------------------------------------------------------------
 # TAB ANALYTICS & ROI
 # ------------------------------------------------------------------------------
