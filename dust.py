@@ -467,4 +467,4 @@ with tab_roi:
     st.markdown("### 💰 FINANCIAL ANALYTICS & ROI")
     col1, col2 = st.columns(2)
     col1.metric("Estimated Daily Revenue Loss", f"RM {daily_loss_rm:.2f}", f"-{loss_w:.1f}W Impact", delta_color="inverse")
-    col2.metric("Current System Efficiency", f"{effic
+    col2.metric("Current System Efficiency", f"{efficiency}
