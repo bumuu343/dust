@@ -19,8 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS – Light & Vibrant, but unique
-# Dipastikan rapat ke kiri untuk mengelakkan IndentationError
+# Custom CSS – Menyokong susun atur kad metrik dan tema visual dashboard
 st.markdown("""
 <style>
 .stApp {
@@ -116,6 +115,7 @@ malaysia_tz = timezone(timedelta(hours=8))
 @st.cache_data(ttl=600)
 def get_weather_by_coords(lat, lon):
     try:
+        # Mengambil data ramalan cuaca masa nyata berdasarkan koordinat geografi
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
         resp = requests.get(url, timeout=5)
         return resp.json()['current_weather']
@@ -125,6 +125,7 @@ def get_weather_by_coords(lat, lon):
 @st.cache_data(ttl=3600)
 def get_location_coords(query):
     try:
+        # Enjin carian Geocoding percuma menggunakan OpenStreetMap Nominatim API
         url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1"
         headers = {'User-Agent': 'Solavaria_Dashboard/1.0'}
         resp = requests.get(url, headers=headers, timeout=10).json()
@@ -202,16 +203,12 @@ def generate_pdf_report(dust_level, pm10, personnel_status, alert_msg, loss_rm):
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 6, "This report is system-generated and complies with ISO 45001 guidelines.", ln=True)
     
-    # --- BAHAGIAN YANG DIBETULKAN ---
     try:
-        # Untuk fpdf versi lama
         pdf_output = pdf.output(dest='S').encode('latin1')
     except AttributeError:
-        # Untuk fpdf versi baru (fpdf2) - terus tukar ke bytes
         pdf_output = bytes(pdf.output())
         
     return pdf_output
-
 
 # ==============================================================================
 # 3. SESSION STATE INIT
@@ -406,27 +403,62 @@ with tab_tele:
         st.warning("No telemetry data yet. Use sidebar to **Log Current Reading**.")
 
 # ------------------------------------------------------------------------------
-# TAB GEOSPATIAL
+# TAB GEOSPATIAL (SEARCH & REAL-TIME FORECAST CO-LOCATION)
 # ------------------------------------------------------------------------------
 with tab_geo:
     st.markdown("### 🔍 LOCATION OVERRIDE SYSTEM")
+    
+    # Bahagian Carian Utama (Mengikut susunan reka bentuk skrin laptop anda)
     search_col, info_col = st.columns([3, 1])
     
     with search_col:
-        city_input = st.text_input("Enter tracking location:", value="UMK Jeli")
+        city_input = st.text_input("Enter tracking location (e.g., UiTM Shah Alam, UMK Jeli, Kuala Lumpur):", value="UiTM Shah Alam")
     
+    # Cari koordinat berdasarkan input secara dinamik
     lat, lon, place_name = get_location_coords(city_input)
     
     if lat and lon:
         with info_col:
-            st.success("✅ Location Found!")
-            st.write(f"**{place_name}**")
-            st.write(f"Lat: {lat}\nLon: {lon}")
+            # Memaparkan kotak merah penunjuk Active Coordinates di sebelah input carian
+            st.markdown(f"""
+            <div style="background-color: #f1f3f9; padding: 0.6rem; border-radius: 0.5rem; border-left: 5px solid #e83e8c;">
+                <small style="color: #6c757d; font-weight: bold;">📍 Active Coordinates:</small><br>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #1e2a3e;">{place_name.upper()}</span><br>
+                <small style="color: #4a5b6e;">({lat:.4f}, {lon:.4f})</small>
+            </div>
+            """, unsafe_allow_html=True)
             
-        map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
-        st.map(map_data, zoom=12, use_container_width=True)
+        st.divider()
+        
+        # MEMECAHKAN KEPADA DUA KOLUM: Kiri untuk Peta, Kanan untuk Ramalan Cuaca Live
+        map_col, weather_col = st.columns([2.3, 1.7])
+        
+        with map_col:
+            st.markdown(f"##### 🛰️ SATELLITE TOPOLOGY: {place_name.upper()}")
+            map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
+            # Memaparkan peta interaktif berpusat pada koordinat carian
+            st.map(map_data, zoom=14, use_container_width=True)
+            
+        with weather_col:
+            st.markdown("##### 🌧️ REAL-TIME WEATHER RADAR")
+            
+            # Memanggil API cuaca menggunakan koordinat baru hasil carian
+            weather_data = get_weather_by_coords(lat, lon)
+            
+            if weather_data:
+                # Membuat reka bentuk grid metrik suhu dan kelajuan angin bersebelahan
+                w1, w2 = st.columns(2)
+                with w1:
+                    st.metric(label="Temperature", value=f"{weather_data['temperature']} °C")
+                with w2:
+                    st.metric(label="Wind Speed (km/h)", value=f"{weather_data['windspeed']}")
+                
+                # Info tambahan status cuaca semasa ringkas
+                st.caption(f"✨ Live forecast data matched successfully for area code boundary.")
+            else:
+                st.warning("⚠️ Data cuaca tidak dapat dimuat turun buat masa ini.")
     else:
-        st.error("⚠️ Location not found. Please try another search.")
+        st.error("⚠️ Lokasi tidak dijumpai. Sila masukkan nama tempat yang lebih spesifik.")
 
 # ------------------------------------------------------------------------------
 # TAB ROI
@@ -435,23 +467,4 @@ with tab_roi:
     st.markdown("### 💰 FINANCIAL ANALYTICS & ROI")
     col1, col2 = st.columns(2)
     col1.metric("Estimated Daily Revenue Loss", f"RM {daily_loss_rm:.2f}", f"-{loss_w:.1f}W Impact", delta_color="inverse")
-    col2.metric("Current System Efficiency", f"{efficiency:.1f}%")
-    st.info("💡 Keep PM10 occlusion levels below 60% to maximize energy generation and minimize revenue leakage.")
-
-# ------------------------------------------------------------------------------
-# TAB AUDIT
-# ------------------------------------------------------------------------------
-with tab_audit:
-    st.markdown("### 📋 AUDIT & COMPLIANCE REPORT")
-    st.write("Generate official OHS compliance and safety logs for your records.")
-    
-    pdf_bytes = generate_pdf_report(occ_pct, sim_pm10, personnel_status, personnel_alert, daily_loss_rm)
-    
-    st.download_button(
-        label="📥 Download Safety Report (PDF)",
-        data=pdf_bytes,
-        file_name=f"Solavaria_Safety_Report_{datetime.now(malaysia_tz).strftime('%Y%m%d_%H%M')}.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
-    
+    col2.metric("Current System Efficiency", f"{effic
