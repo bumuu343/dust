@@ -8,6 +8,7 @@ import math
 from datetime import datetime, timedelta, timezone
 import base64
 from fpdf import FPDF
+import streamlit.components.v1 as components  # <--- INI YANG TERTINGGAL TADI!
 
 # ==============================================================================
 # 1. PAGE CONFIG & THEME
@@ -235,7 +236,7 @@ with st.sidebar:
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📝 Log Current Reading", use_container_width=True):
+        if st.button("📝 Log Current Reading", width="stretch"):
             new_row = pd.DataFrame([{
                 'Time': datetime.now(),
                 'Irradiance': sim_ldr,
@@ -247,7 +248,7 @@ with st.sidebar:
             st.session_state.sys_logs = pd.concat([st.session_state.sys_logs, new_row], ignore_index=True)
             st.toast("Telemetry logged to ledger", icon="✅")
     with col2:
-        if st.button("🔄 Reset Logs", use_container_width=True):
+        if st.button("🔄 Reset Logs", width="stretch"):
             st.session_state.sys_logs = st.session_state.sys_logs.iloc[0:0]
             st.rerun()
     
@@ -311,10 +312,10 @@ with tab_exec:
     with col_a:
         st.markdown("### 🛠️ DIGITAL TWIN – SOLIDWORKS ASSEMBLY")
         try:
-            st.image("solavaria_cad.png", caption="Solavaria Miniature Node – Full Mechanical Assembly", use_container_width=True)
+            st.image("solavaria_cad.png", caption="Solavaria Miniature Node – Full Mechanical Assembly", width="stretch")
         except:
             st.warning("⚠️ Place 'solavaria_cad.png' in the app folder. Using placeholder.")
-            st.image("https://placehold.co/800x500/f8f9ff/e83e8c?text=SOLAVARIA+CAD+MODEL", use_container_width=True)
+            st.image("https://placehold.co/800x500/f8f9ff/e83e8c?text=SOLAVARIA+CAD+MODEL", width="stretch")
         st.markdown("""
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
             <span style="background:#f0e6ff; padding:0.2rem 1rem; border-radius:2rem;">🔋 Solar Panel</span>
@@ -362,7 +363,7 @@ with tab_exec:
             df_trend = st.session_state.sys_logs.copy().tail(12)
             fig_trend = go.Figure(go.Scatter(x=df_trend['Time'], y=df_trend['Occlusion'], mode='lines+markers', line_color='#e83e8c', marker_color='#6f42c1', name='Occlusion %'))
             fig_trend.update_layout(xaxis_title="Time", yaxis_title="Occlusion %", height=180, margin=dict(l=0, r=0, t=20, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(size=10))
-            st.plotly_chart(fig_trend, use_container_width=True)
+            st.plotly_chart(fig_trend, width="stretch")
             c1, c2 = st.columns(2)
             c1.metric("Current Occlusion", f"{occ_pct:.1f}%")
             c2.metric("Avg. Occlusion (Past 12h)", f"{df_trend['Occlusion'].mean():.1f}%")
@@ -395,7 +396,7 @@ with tab_tele:
             zmin=0, zmax=100
         ))
         fig.update_layout(title="Average Solar Efficiency by Hour of Day", xaxis_title="Hour (24h)", height=400)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     else:
         st.warning("No telemetry data yet. Use sidebar to **Log Current Reading**.")
 
@@ -428,9 +429,8 @@ with tab_geo:
         
         with map_col:
             st.markdown(f"##### 🛰️ SATELLITE TOPOLOGY: {display_name.upper()}")
-            # GUNA STREAMLIT MAP (Confirm lepas HTTPS Streamlit Cloud)
             map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
-            st.map(map_data, zoom=14, use_container_width=True)
+            st.map(map_data, zoom=14, width="stretch")
             
         with weather_col:
             st.markdown("##### 🌧️ REAL-TIME WEATHER RADAR")
@@ -443,7 +443,7 @@ with tab_geo:
                 with w2:
                     st.metric(label="Wind Speed", value=f"{weather_data['windspeed']} km/h")
                 
-                # --- PETA KECIL ANIMASI CUACA (WINDY) DIMASUKKAN SEMULA DI SINI ---
+                # --- PETA KECIL ANIMASI CUACA (WINDY) ---
                 windy_html = f"""<iframe width="100%" height="200" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=10&overlay=wind&product=ecmwf&level=surface&lat={lat}&lon={lon}" frameborder="0" style="border-radius: 1rem; border: 1px solid #e9ecef; margin-top: 0.5rem;"></iframe>"""
                 components.html(windy_html, height=210)
                 
@@ -456,6 +456,7 @@ with tab_geo:
                 st.warning("⚠️ Data cuaca tidak dapat dimuat turun buat masa ini.")
     else:
         st.error("⚠️ Lokasi tidak dijumpai. Sila masukkan nama tempat yang lebih spesifik.")
+
 # ------------------------------------------------------------------------------
 # TAB ANALYTICS & ROI
 # ------------------------------------------------------------------------------
@@ -490,7 +491,7 @@ with tab_roi:
     fig = go.Figure(go.Bar(x=[f"Day +{d}" for d in forecast_days], y=predict_occ, marker_color='#e83e8c', text=[f"{x:.0f}%" for x in predict_occ], textposition='auto'))
     fig.add_hline(y=60, line_dash="dash", line_color="#6f42c1", annotation_text="CLEANING TRIGGER")
     fig.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(color='#1e2a3e'), yaxis=dict(title="Predicted Occlusion %", range=[0, 100]))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ------------------------------------------------------------------------------
 # TAB AUDIT & COMPLIANCE
@@ -501,7 +502,7 @@ with tab_audit:
     
     col_p1, col_p2 = st.columns([1, 1])
     with col_p1:
-        if st.button("📄 GENERATE OHS COMPLIANCE REPORT (PDF)", use_container_width=True):
+        if st.button("📄 GENERATE OHS COMPLIANCE REPORT (PDF)", width="stretch"):
             pdf_bytes = generate_pdf_report(occ_pct, sim_pm10, personnel_status, personnel_alert, daily_loss_rm)
             b64 = base64.b64encode(pdf_bytes).decode()
             href = f'<a href="data:application/octet-stream;base64,{b64}" download="Solavaria_OHS_Report_{datetime.now(malaysia_tz).strftime("%Y%m%d")}.pdf">📥 Click here to download PDF report</a>'
@@ -514,6 +515,6 @@ with tab_audit:
     if len(st.session_state.sys_logs) > 0:
         st.dataframe(st.session_state.sys_logs.tail(10).sort_values('Time', ascending=False).style.format({
             'Voltage': '{:.2f}', 'Power': '{:.2f}', 'Occlusion': '{:.1f}%', 'Irradiance': '{:.1f}%'
-        }), use_container_width=True)
+        }), width="stretch")
     else:
         st.info("No logs recorded. Use the sidebar to log data.")
