@@ -19,7 +19,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS – Menyokong susun atur kad metrik dan tema visual dashboard
 st.markdown("""
 <style>
 .stApp {
@@ -135,23 +134,6 @@ def get_location_coords(query):
         pass
     return None, None, None
 
-def compute_solar_position(lat=5.745, lon=101.865):
-    now = datetime.now()
-    hour = now.hour + now.minute/60
-    day_of_year = now.timetuple().tm_yday
-    dec = -23.45 * math.cos(math.radians(360/365 * (day_of_year + 10)))
-    ha = math.radians(15 * (hour - 12))
-    lat_rad = math.radians(lat)
-    dec_rad = math.radians(dec)
-    sin_alt = math.sin(lat_rad) * math.sin(dec_rad) + math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha)
-    elevation = math.degrees(math.asin(sin_alt))
-    cos_az = (math.sin(dec_rad) - math.sin(lat_rad)*sin_alt) / (math.cos(lat_rad)*math.cos(math.radians(elevation)))
-    cos_az = max(-1, min(1, cos_az))
-    azimuth = math.degrees(math.acos(cos_az))
-    if ha > 0:
-        azimuth = 360 - azimuth
-    return azimuth, elevation
-
 def generate_pdf_report(dust_level, pm10, personnel_status, alert_msg, loss_rm):
     pdf = FPDF()
     pdf.add_page()
@@ -260,11 +242,15 @@ with st.sidebar:
 # ==============================================================================
 occ_pct = min(100.0, (sim_pm10 / 500.0) * 100 + np.random.uniform(0, 1.5))
 eff_factor = max(0.05, 1.0 - math.pow((occ_pct / 100.0), 1.6))
-actual_v = (12.0 * (sim_ldr / 100.0)) * eff_factor
-actual_w = actual_v * 5.0
-efficiency = (actual_v / 12.0) * 100
 
-potential_w = (12.0 * (sim_ldr/100.0)) * 5.0
+# --- FORMULA VOLTAGE DI SINI (Membaiki isu NameError) ---
+potential_v = 12.0 * (sim_ldr / 100.0)
+actual_v = potential_v * eff_factor
+
+potential_w = potential_v * 5.0
+actual_w = actual_v * 5.0
+
+efficiency = (actual_v / 12.0) * 100 if potential_v > 0 else 0
 loss_w = max(0, potential_w - actual_w)
 daily_loss_rm = (loss_w * 24 / 1000) * 0.57
 
@@ -324,13 +310,14 @@ with tab_exec:
             <span style="background:#f0fff0; padding:0.2rem 1rem; border-radius:2rem;">🛡️ Enclosure</span>
         </div>
         """, unsafe_allow_html=True)
+        
     with col_b:
         st.markdown("### ⚡ ASSET HEALTH")
         
         # Susunan baris pertama: Input & Output Voltage
         v1, v2 = st.columns(2)
         v1.metric("Input Voltage", f"{potential_v:.2f} V", "Raw from Solar")
-        v2.metric("Output Voltage", f"{actual_v:.2f} V", f"{efficiency:.1f}% efficiency", delta_color="normal")
+        v2.metric("Output Voltage", f"{actual_v:.2f} V", f"{efficiency:.1f}% eff", delta_color="normal")
         
         # Susunan baris kedua: Potential & Actual Power
         w1, w2 = st.columns(2)
@@ -347,7 +334,6 @@ with tab_exec:
 
         pm10_percent = min(100, (sim_pm10 / 500) * 100)
         
-        # Status Card
         st.markdown(f"""
         <div style="background-color:{bg_color}; padding:1rem; border-radius:1rem; border-left:8px solid {border_color}; margin:0.5rem 0;">
             <div style="display:flex; align-items:center; gap:1rem;">
@@ -360,11 +346,9 @@ with tab_exec:
         </div>
         """, unsafe_allow_html=True)
 
-        # --- EXPOSURE LEVEL BAR ---
         st.markdown(f"**Exposure Level: {int(pm10_percent)}%**")
         st.progress(int(pm10_percent))
         
-        # Dynamic Safety Alerts based on Exposure
         if sim_pm10 >= 350:
             st.error("🚨 **CRITICAL:** Cease all outdoor activities immediately. Evacuate to shelter.")
         elif sim_pm10 >= 150:
@@ -378,6 +362,7 @@ with tab_exec:
             fig_trend = go.Figure(go.Scatter(x=df_trend['Time'], y=df_trend['Occlusion'], mode='lines+markers', line_color='#e83e8c', marker_color='#6f42c1', name='Occlusion %'))
             fig_trend.update_layout(xaxis_title="Time", yaxis_title="Occlusion %", height=180, margin=dict(l=0, r=0, t=20, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(size=10))
             st.plotly_chart(fig_trend, use_container_width=True)
+            
             c1, c2 = st.columns(2)
             c1.metric("Current Occlusion", f"{occ_pct:.1f}%")
             c2.metric("Avg. Occlusion (Past 12h)", f"{df_trend['Occlusion'].mean():.1f}%")
@@ -415,11 +400,10 @@ with tab_tele:
         st.warning("No telemetry data yet. Use sidebar to **Log Current Reading**.")
 
 # ------------------------------------------------------------------------------
-# TAB GEOSPATIAL (SEARCH & REAL-TIME FORECAST CO-LOCATION)
+# TAB GEOSPATIAL
 # ------------------------------------------------------------------------------
 with tab_geo:
     st.markdown("### 🔍 LOCATION OVERRIDE SYSTEM")
-    
     search_col, info_col = st.columns([3, 1])
     
     with search_col:
@@ -448,7 +432,6 @@ with tab_geo:
             
         with weather_col:
             st.markdown("##### 🌧️ REAL-TIME WEATHER RADAR")
-            
             weather_data = get_weather_by_coords(lat, lon)
             
             if weather_data:
@@ -456,9 +439,9 @@ with tab_geo:
                 with w1:
                     st.metric(label="Temperature", value=f"{weather_data['temperature']} °C")
                 with w2:
-                    st.metric(label="Wind Speed (km/h)", value=f"{weather_data['windspeed']}")
+                    st.metric(label="Wind Speed", value=f"{weather_data['windspeed']} km/h")
                 
-                st.caption(f"✨ Live forecast data matched successfully for area code boundary.")
+                st.caption("✨ Live forecast data matched successfully for area code boundary.")
             else:
                 st.warning("⚠️ Data cuaca tidak dapat dimuat turun buat masa ini.")
     else:
@@ -489,5 +472,5 @@ with tab_audit:
         file_name=f"Solavaria_Safety_Report_{datetime.now(malaysia_tz).strftime('%Y%m%d_%H%M')}.pdf",
         mime="application/pdf",
         use_container_width=True
-    )
-
+                                                  )
+    
