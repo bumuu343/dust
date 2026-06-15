@@ -201,8 +201,17 @@ def generate_pdf_report(dust_level, pm10, personnel_status, alert_msg, loss_rm):
     pdf.set_font("Helvetica", "I", 10)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 6, "This report is system-generated and complies with ISO 45001 guidelines.", ln=True)
-    pdf_output = pdf.output(dest='S').encode('latin1')
+    
+    # --- BAHAGIAN YANG DIBETULKAN ---
+    try:
+        # Untuk fpdf versi lama
+        pdf_output = pdf.output(dest='S').encode('latin1')
+    except AttributeError:
+        # Untuk fpdf versi baru (fpdf2) - terus tukar ke bytes
+        pdf_output = bytes(pdf.output())
+        
     return pdf_output
+
 
 # ==============================================================================
 # 3. SESSION STATE INIT
